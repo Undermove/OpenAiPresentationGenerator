@@ -1,0 +1,48 @@
+﻿@page
+@model OpenAiQuickStartCSharp.Pages.IndexModel
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Page Title</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
+</head>
+<body>
+<form id="presentationForm" class="input-form" method="post">
+    <h1>📺</h1>
+    <label for="my-input">Enter Presentation Theme</label>
+    <input placeholder="Enter presentation theme" type="text" id="PresentationTheme" name="PresentationTheme"/>
+    <label for="my-input">Enter slides count</label>
+    <input placeholder="Enter slides count" type="text" id="SlidesCount" name="SlidesCount"/>
+    <button type="submit">Generate presentation</button>
+</form>
+<div class="output-block">
+    <span>Suggested Names:</span>
+    <span id="suggestedNames"></span>
+</div>
+</body>
+
+<script>
+    document.getElementById("presentationForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            var formData = new FormData(event.target);
+            var jsonData = JSON.stringify(Object.fromEntries(formData.entries()));
+
+            fetch("/OpenAi", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: jsonData
+            })
+        .then(response => response.text())
+        .then(result => {
+            console.log(result);
+            document.getElementById("suggestedNames").innerText = result;
+        })
+        .catch(error => {
+            console.error(error);
+        });
+    });
+</script>
+</html>

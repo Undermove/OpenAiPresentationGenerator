@@ -23,26 +23,56 @@
 </body>
 
 <script>
-    document.getElementById("presentationForm").addEventListener("submit", function(event) {
-            event.preventDefault();
-            var formData = new FormData(event.target);
-            var jsonData = JSON.stringify(Object.fromEntries(formData.entries()));
+document.getElementById("presentationForm").addEventListener("submit", async function(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    const jsonData = JSON.stringify(Object.fromEntries(formData.entries()));
 
-            fetch("/OpenAi", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: jsonData
-            })
-        .then(response => response.text())
-        .then(result => {
-            console.log(result);
-            document.getElementById("suggestedNames").innerText = result;
-        })
-        .catch(error => {
-            console.error(error);
-        });
+    const response = await fetch("/OpenAi", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: jsonData
     });
+    const reader = response.body.getReader();
+    const stream = new ReadableStream({
+        start(controller) {
+            return pump();
+            function pump() {
+                return reader.read().then(({ done, value }) => {
+                    if (done) {
+                        controller.close();
+                        return;
+                    }
+                    controller.enqueue(value);
+                    return pump();
+                });
+            }
+        }
+    });
+    const blob = new Blob([await streamToArray(stream)]);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'somefile.pptx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+})
+
+async function streamToArray(stream) {
+    const chunks = [];
+    const reader = stream.getReader();
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+            break;
+        }
+        chunks.push(value);
+    }
+    return new Uint8Array(await new Blob(chunks).arrayBuffer());
+}
 </script>
 </html>

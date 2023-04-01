@@ -22,7 +22,7 @@ public class OpenAiController : ControllerBase
     }
  
     [HttpPost]
-    public async Task<IActionResult> GenerateSuperheroNames([FromBody] RequestModel request)
+    public async Task<IActionResult> GeneratePresentation([FromBody] RequestModel request)
     {
         var apiKey = _config.ApiKey;
 
@@ -37,7 +37,7 @@ public class OpenAiController : ControllerBase
             });
         }
 
-        var openai = new OpenAI_API.OpenAIAPI(apiKey);
+        var openai = new OpenAIAPI(apiKey);
 
         var presentationTheme = request.PresentationTheme ?? "";
         if (string.IsNullOrWhiteSpace(presentationTheme))
@@ -78,9 +78,8 @@ public class OpenAiController : ControllerBase
                 text.TextFrame!.Text = slideText.Completions[0].Text;
             }
             
-            pres.SaveAs("my_pres.pptx");
-
-            return Ok();
+            //pres.SaveAs("my_pres.pptx");
+            return File(pres.BinaryData, "application/octet-stream", $"{request.PresentationTheme}.pptx");
         }
         catch (Exception error)
         {
